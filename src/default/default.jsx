@@ -18,63 +18,41 @@ export default function AppView() {
     right: '7 / 1 / 13 / 3',
     rear: '7 / 11 / 13 / 13',
   });
-  // const [videoStreams, setVideoStreams] = useState({
-  //   payload: null,
-  //   left: null,
-  //   main: null,
-  //   right: null,
-  //   rear: null,
-  // });
-  // useEffect(() => {
-  //   const ws = new WebSocket('ws://10.3.1.12:5000l'); 
+  const [videoStreams, setVideoStreams] = useState({
+    payload: null,
+    left: null,
+    main: null,
+    right: null,
+    rear: null,
+  });
 
-  //   ws.onmessage = (event) => {
-  //     const { id, stream } = JSON.parse(event.data);
-  //     setVideoStreams((prevStreams) => ({
-  //       ...prevStreams,
-  //       [id]: stream,
-  //     }));
-  //   };
+  useEffect(() => {
+    const ws = new WebSocket('ws://192.168.230.100:30000');
 
-  //   return () => {
-  //     ws.close();
-  //   };
-  // }, []);
-  // const [videoStreams, setVideoStreams] = useState({
-  //   payload: null,
-  //   left: null,
-  //   main: null,
-  //   right: null,
-  //   rear: null,
-  // });
+    ws.onmessage = async (event) => {
+      const { id, stream } = JSON.parse(event.data);
+      const decompressedStream = await decompressStream(stream);
+      setVideoStreams((prevStreams) => ({
+        ...prevStreams,
+        [id]: decompressedStream,
+      }));
+    };
 
-  // useEffect(() => {
-  //   const ws = new WebSocket('ws://192.168.230.100:30000');
-  //   webSocket.onmessage = async (event) => {
-  //     const { id, stream } = JSON.parse(event.data);
-  //     console.log('ok');
-  //     const decompressedStream = await decompressStream(stream);
-  //     setVideoStreams((prevStreams) => ({
-  //       ...prevStreams,
-  //       [id]: decompressedStream,
-  //     }));
-  //   };
+    return () => {
+      ws.close();
+    };
+  }, []);
 
-  //   return () => {
-  //     webSocket.close();
-  //   };
-  // }, []);
-
-  //   const decompressStream = async (compressedStream) => {
-  //   const binaryString = atob(compressedStream);
-  //   const binaryLength = binaryString.length;
-  //   const bytes = new Uint8Array(binaryLength);
-  //   for (let i = 0; i < binaryLength; i++) {
-  //     bytes[i] = binaryString.charCodeAt(i);
-  //   }
-  //   const decompressed = pako.inflate(bytes);
-  //   return URL.createObjectURL(new Blob([decompressed.buffer], { type: 'image/jpeg' }));
-  // };
+  const decompressStream = async (compressedStream) => {
+    const binaryString = atob(compressedStream);
+    const binaryLength = binaryString.length;
+    const bytes = new Uint8Array(binaryLength);
+    for (let i = 0; i < binaryLength; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    const decompressed = pako.inflate(bytes);
+    return URL.createObjectURL(new Blob([decompressed.buffer], { type: 'image/jpeg' }));
+  };
   const [gridAreas, setGridAreas] = useState(initialGridAreas);
 
   const handleCameraClick = (cameraId) => {
