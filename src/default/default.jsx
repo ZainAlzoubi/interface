@@ -29,20 +29,39 @@ export default function AppView() {
   useEffect(() => {
     const ws = new WebSocket('ws://192.168.230.100:30000');
 
+    ws.onopen = () => {
+      console.log('WebSocket connection established');
+    };
+
     ws.onmessage = async (event) => {
-      const { id, stream } = JSON.parse(event.data);
-      const decompressedStream = await decompressStream(stream);
-      setVideoStreams((prevStreams) => ({
-        ...prevStreams,
-        [id]: decompressedStream,
-      }));
+      try {
+        const { id, stream } = JSON.parse(event.data);
+        const decompressedStream = await decompressStream(stream);
+        setVideoStreams((prevStreams) => ({
+          ...prevStreams,
+          [id]: decompressedStream,
+        }));
+      } catch (error) {
+        console.error('Error processing message:', error);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    ws.onclose = (event) => {
+      if (event.wasClean) {
+        console.log(`WebSocket connection closed cleanly, code=${event.code}, reason=${event.reason}`);
+      } else {
+        console.error('WebSocket connection died');
+      }
     };
 
     return () => {
       ws.close();
     };
   }, []);
-
   const decompressStream = async (compressedStream) => {
     const binaryString = atob(compressedStream);
     const binaryLength = binaryString.length;
@@ -130,36 +149,36 @@ export default function AppView() {
           maxWidth: '98vw',
         }}
       >
-        <Camera
-          gridArea={gridAreas.payload}
-          id="payload"
-          onClick={() => handleCameraClick("payload")}
-          //stream={videoStreams.payload}
-        />
-        <Camera
-          gridArea={gridAreas.left}
-          id="left"
-          onClick={() => handleCameraClick("left")}
-         // stream={videoStreams.left}
-        />
-        <Camera
-          gridArea={gridAreas.main}
-          id="main"
-          onClick={() => handleCameraClick("main")}
-          //stream={videoStreams.main}
-        />
-        <Camera
-          gridArea={gridAreas.right}
-          id="right"
-          onClick={() => handleCameraClick("right")}
-          //stream={videoStreams.right}
-        />
-        <Camera
-          gridArea={gridAreas.rear}
-          id="rear"
-          onClick={() => handleCameraClick("rear")}
-          //stream={videoStreams.rear}
-        />
+      <Camera
+        gridArea={gridAreas.payload}
+        id="payload"
+        onClick={() => handleCameraClick("payload")}
+        {...(videoStreams.payload ? { stream: videoStreams.payload } : {})}
+      />
+      <Camera
+        gridArea={gridAreas.left}
+        id="left"
+        onClick={() => handleCameraClick("left")}
+        {...(videoStreams.left ? { stream: videoStreams.left } : {})}
+      />
+      <Camera
+        gridArea={gridAreas.main}
+        id="main"
+        onClick={() => handleCameraClick("main")}
+        {...(videoStreams.main ? { stream: videoStreams.main } : {})}
+      />
+      <Camera
+        gridArea={gridAreas.right}
+        id="right"
+        onClick={() => handleCameraClick("right")}
+        {...(videoStreams.right ? { stream: videoStreams.right } : {})}
+      />
+      <Camera
+        gridArea={gridAreas.rear}
+        id="rear"
+        onClick={() => handleCameraClick("rear")}
+        {...(videoStreams.rear ? { stream: videoStreams.rear } : {})}
+      />
       </Box>
       <ButtonAppBar />
     </div>
