@@ -26,42 +26,42 @@ export default function AppView() {
     rear: null,
   });
 
-  useEffect(() => {
-    const ws = new WebSocket('wss://192.168.230.100:30000');
+  // useEffect(() => {
+  //   const ws = new WebSocket('wss://192.168.230.100:30000');
 
-    ws.onopen = () => {
-      console.log('WebSocket connection established');
-    };
+  //   ws.onopen = () => {
+  //     console.log('WebSocket connection established');
+  //   };
 
-    ws.onmessage = async (event) => {
-      try {
-        const { id, stream } = JSON.parse(event.data);
-        const decompressedStream = await decompressStream(stream);
-        setVideoStreams((prevStreams) => ({
-          ...prevStreams,
-          [id]: decompressedStream,
-        }));
-      } catch (error) {
-        console.error('Error processing message:', error);
-      }
-    };
+  //   ws.onmessage = async (event) => {
+  //     try {
+  //       const { id, stream } = JSON.parse(event.data);
+  //       const decompressedStream = await decompressStream(stream);
+  //       setVideoStreams((prevStreams) => ({
+  //         ...prevStreams,
+  //         [id]: decompressedStream,
+  //       }));
+  //     } catch (error) {
+  //       console.error('Error processing message:', error);
+  //     }
+  //   };
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
+  //   ws.onerror = (error) => {
+  //     console.error('WebSocket error:', error);
+  //   };
 
-    ws.onclose = (event) => {
-      if (event.wasClean) {
-        console.log(`WebSocket connection closed cleanly, code=${event.code}, reason=${event.reason}`);
-      } else {
-        console.error('WebSocket connection died');
-      }
-    };
+  //   ws.onclose = (event) => {
+  //     if (event.wasClean) {
+  //       console.log(`WebSocket connection closed cleanly, code=${event.code}, reason=${event.reason}`);
+  //     } else {
+  //       console.error('WebSocket connection died');
+  //     }
+  //   };
 
-    return () => {
-      ws.close();
-    };
-  }, []);
+  //   return () => {
+  //     ws.close();
+  //   };
+  // }, []);
   const decompressStream = async (compressedStream) => {
     const binaryString = atob(compressedStream);
     const binaryLength = binaryString.length;
