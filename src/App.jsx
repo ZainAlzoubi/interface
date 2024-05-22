@@ -2,7 +2,7 @@ import "./App.css";
 import { AppView } from "./default";
  //import ButtonAppBar from './default/bottombar';
  import Payload from "./default/Payload";
- import { BrowserRouter as Router, Route,Routes} from 'react-router-dom';
+ import { HashRouter as Router, Route,Routes} from 'react-router-dom';
 function App() {
   return (
     <Router>

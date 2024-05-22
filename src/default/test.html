@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Stream</title>
+  <style>
+    body, html {
+      height: 100%;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #f0f0f0;
+    }
+    #video-container {
+      width: 80%;
+      height: 80%;
+      max-width: 98vw;
+      max-height: 98vh;
+      background-color: #000;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+  <div id="video-container">
+    <video id="videoElement" autoplay></video>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
+  <script>
+    const videoElement = document.getElementById('videoElement');
+
+    function decompressStream(compressedStream) {
+      const binaryString = atob(compressedStream);
+      const binaryLength = binaryString.length;
+      const bytes = new Uint8Array(binaryLength);
+      for (let i = 0; i < binaryLength; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const decompressed = pako.inflate(bytes);
+      return URL.createObjectURL(new Blob([decompressed.buffer], { type: 'video/mp4' }));
+    }
+
+    const ws = new WebSocket('ws://192.168.230.100:30000');
+
+    ws.onopen = () => {
+      console.log('WebSocket connection established');
+    };
+
+    ws.onmessage = async (event) => {
+      console.log('Message received from server');
+      try {
+        const { stream } = JSON.parse(event.data);
+        console.log('Stream received:', stream);
+        const decompressedStream = await decompressStream(stream);
+        videoElement.src = decompressedStream;
+      } catch (error) {
+        console.error('Error processing message:', error);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    ws.onclose = (event) => {
+      if (event.wasClean) {
+        console.log(`WebSocket connection closed cleanly, code=${event.code}, reason=${event.reason}`);
+      } else {
+        console.error('WebSocket connection died');
+      }
+    };
+  </script>
+</body>
+</html>

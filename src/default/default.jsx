@@ -2,7 +2,7 @@
 import  React, { useState,useEffect} from 'react';
 //import { makeStyles } from '@mui/material';
 import ButtonAppBar from './bottombar';
-import { Box } from "@mui/material";
+import  Box  from "@mui/material/Box";
 // import Grid from '@mui/material/Grid';
 // import Container from '@mui/material/Container';
 // import Typography from '@mui/material/Typography';
