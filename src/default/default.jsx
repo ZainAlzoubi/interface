@@ -27,7 +27,7 @@ export default function AppView() {
   });
 
   useEffect(() => {
-    const ws = new WebSocket('ws://192.168.230.100:30000');
+    const ws = new WebSocket('wss://192.168.230.100:30000');
 
     ws.onopen = () => {
       console.log('WebSocket connection established');
