@@ -1,13 +1,10 @@
 /* eslint-disable no-unused-vars */
-import  React, { useState,useEffect} from 'react';
-//import { makeStyles } from '@mui/material';
+import '../polyfills';
+import { useState,useEffect,useRef} from 'react';
 import ButtonAppBar from './bottombar';
 import  Box  from "@mui/material/Box";
-// import Grid from '@mui/material/Grid';
-// import Container from '@mui/material/Container';
-// import Typography from '@mui/material/Typography';
 import Camera from "./Cameras";
-import pako from "pako"
+import SimplePeer from 'simple-peer';
 
 export default function AppView() {
   const [expandedCameraId, setExpandedCameraId] = useState(null);
@@ -25,53 +22,165 @@ export default function AppView() {
     right: null,
     rear: null,
   });
+  const videoRefs = {
+    payload: useRef(null),
+    left: useRef(null),
+    main: useRef(null),
+    right: useRef(null),
+    rear: useRef(null),
+  };
 
   useEffect(() => {
-    const ws = new WebSocket('wss://192.168.230.100:30000');
+    const ws = new WebSocket('ws://192.168.230.100:30000');
+    const ws2 = new WebSocket('ws://192.168.230.100:30001');
 
-    ws.onopen = () => {
-      console.log('WebSocket connection established');
+    const peers = {};
+
+    const createPeerConnection = (ws, videoRef) => {
+      console.log('Creating peer connection');
+      const peer = new SimplePeer({ initiator: false, trickle: false });
+
+      peer.on('signal', (data) => {
+        console.log('Peer signal data:', data);
+        ws.send(JSON.stringify(data));
+      });
+
+      peer.on('stream', (stream) => {
+        console.log('Received stream:', stream);
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      });
+
+      ws.onmessage = (event) => {
+        console.log('Received WebSocket message:', event.data);
+        const data = JSON.parse(event.data);
+        peer.signal(data);
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket closed');
+      };
+
+      return peer;
     };
 
-    ws.onmessage = async (event) => {
-      try {
-        const { id, stream } = JSON.parse(event.data);
-        const decompressedStream = await decompressStream(stream);
-        setVideoStreams((prevStreams) => ({
-          ...prevStreams,
-          [id]: decompressedStream,
-        }));
-      } catch (error) {
-        console.error('Error processing message:', error);
+    const setupPeerConnections = () => {
+      console.log('Setting up peer connections');
+      peers.payload = createPeerConnection(ws, videoRefs.payload);
+      peers.main = createPeerConnection(ws2, videoRefs.main);
+    };
+
+    const handleWebSocketOpen = () => {
+      if (ws.readyState === WebSocket.OPEN && ws2.readyState === WebSocket.OPEN) {
+        setupPeerConnections();
       }
     };
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
+    const handleWebSocketErrorOrClose = (e) => {
+      // console.error('WebSocket connection failed or closed', e);
+      console.log("No connection was established")
+      ws.close();
+      ws2.close();
     };
 
-    ws.onclose = (event) => {
-      if (event.wasClean) {
-        console.log(`WebSocket connection closed cleanly, code=${event.code}, reason=${event.reason}`);
-      } else {
-        console.error('WebSocket connection died');
+    ws.addEventListener('open', handleWebSocketOpen);
+    ws2.addEventListener('open', handleWebSocketOpen);
+
+    ws.addEventListener('error', handleWebSocketErrorOrClose);
+    ws2.addEventListener('error', handleWebSocketErrorOrClose);
+
+    ws.addEventListener('close', handleWebSocketErrorOrClose);
+    ws2.addEventListener('close', handleWebSocketErrorOrClose);
+
+    const connectionTimeout = setTimeout(() => {
+      if (ws.readyState !== WebSocket.OPEN || ws2.readyState !== WebSocket.OPEN) {
+        handleWebSocketErrorOrClose(new Error('WebSocket connection timeout'));
       }
-    };
+    }, 5000); // 5 seconds timeout for connection establishment
 
     return () => {
+      console.log('Cleaning up peer connections and WebSockets');
+      clearTimeout(connectionTimeout);
+      Object.values(peers).forEach((peer) => {
+        console.log('Destroying peer:', peer);
+        peer.destroy();
+      });
       ws.close();
+      ws2.close();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const decompressStream = async (compressedStream) => {
-    const binaryString = atob(compressedStream);
-    const binaryLength = binaryString.length;
-    const bytes = new Uint8Array(binaryLength);
-    for (let i = 0; i < binaryLength; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-    const decompressed = pako.inflate(bytes);
-    return URL.createObjectURL(new Blob([decompressed.buffer], { type: 'image/jpeg' }));
-  };
+//     ws.onopen = () => {
+//       console.log('WebSocket connection established');
+//     };
+//     ws2.open = () => {
+//       console.log('WebSocket connection established');
+//     };
+//     ws.onmessage = async (event) => {
+//       try {
+//         const blob = event.data;
+//           const objectURL = URL.createObjectURL(blob);
+//           setVideoStreams((prevStreams) => ({
+//             ...prevStreams,
+//             payload: objectURL, 
+//           }));
+//       } catch (error) {
+//         console.error('Error processing message:', error);
+//       }
+//     };
+//     ws2.onmessage = async (event) => {
+//       try {
+//         const blob = event.data;
+//           const objectURL = URL.createObjectURL(blob);
+//           setVideoStreams((prevStreams) => ({
+//             ...prevStreams,
+//             main: objectURL, 
+//           }));
+//       } catch (error) {
+//         console.error('Error processing message:', error);
+//       }
+// };
+//     ws.onerror = (error) => {
+//       console.error('WebSocket error:', error);
+//     };
+
+//     ws.onclose = (event) => {
+//       if (event.wasClean) {
+//         console.log(`WebSocket connection closed cleanly, code=${event.code}, reason=${event.reason}`);
+//       } else {
+//         console.error('WebSocket connection died');
+//       }
+//     };
+//     ws2.onerror = (error) => {
+//       console.error('WebSocket error:', error);
+//     };
+
+//     ws2.onclose = (event) => {
+//       if (event.wasClean) {
+//         console.log(`WebSocket connection closed cleanly, code=${event.code}, reason=${event.reason}`);
+//       } else {
+//         console.error('WebSocket connection died');
+//       }
+//     };
+//     return () => {
+//       ws.close();
+//     };
+//   }, []);
+  // const decompressStream = async (compressedStream) => {
+  //   const binaryString = atob(compressedStream);
+  //   const binaryLength = binaryString.length;
+  //   const bytes = new Uint8Array(binaryLength);
+  //   for (let i = 0; i < binaryLength; i++) {
+  //     bytes[i] = binaryString.charCodeAt(i);
+  //   }
+  //   const decompressed = pako.inflate(bytes);
+  //   return URL.createObjectURL(new Blob([decompressed.buffer], { type: 'image/jpeg' }));
+  // };
   const [gridAreas, setGridAreas] = useState(initialGridAreas);
 
   const handleCameraClick = (cameraId) => {
@@ -184,6 +293,7 @@ export default function AppView() {
     </div>
   );
 }
+
 
 
 // export default function AppView() {

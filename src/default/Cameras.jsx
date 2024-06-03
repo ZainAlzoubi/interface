@@ -329,7 +329,16 @@ function Camera({ id, onClick, gridArea,stream}) {
             setIsVisible(true);
         }
     }, [gridArea]);
+    useEffect(() => {
+        const mainCamera = mainCameraRef.current;
+        const payloadCamera = payloadCameraRef.current;
 
+        if (id === 'main' && mainCamera && stream) {
+            mainCamera.srcObject = stream;
+        } else if (id === 'payload' && payloadCamera && stream) {
+            payloadCamera.srcObject = stream;
+        }
+    }, [id, stream]);
     const [isHovered, setIsHovered] = useState(false);
     const handleMouseEnter = () => {
         setIsHovered(true);
@@ -361,10 +370,10 @@ function Camera({ id, onClick, gridArea,stream}) {
                     role="button"
                     ref={mainCameraRef}
                 >
-                    <video loop id={`camera-${id}`} autoPlay muted style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }}>
-                        <source src={stream} type="video/mp4" />
-                        <track src="captions.vtt" kind="captions" label="English Captions" />
-                    </video>
+                    <video loop id={`camera-${id}`} autoPlay muted style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} ref={mainCameraRef}>
+                        {/* <source src={stream} type="video/mp4" />
+                        <track src="captions.vtt" kind="captions" label="English Captions" /> */}
+                   </video>
                     {isHovered && (
                         <div style={{ position: 'absolute', bottom: 5, right: 5, backgroundColor: 'rgba(0, 0, 0, 0.5)', color: '#ffffff', padding: '2px 4px', borderRadius: '4px', fontSize: '12px' }}>
                             {id === 'payload' ? (
@@ -396,9 +405,9 @@ function Camera({ id, onClick, gridArea,stream}) {
                     role="button"
                     ref={payloadCameraRef}
                 >
-                    <video loop id={`camera-${id}`} autoPlay muted style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }}>
-                        <source src={stream} type="video/mp4" />
-                        <track src="captions.vtt" kind="captions" label="English Captions" />
+                    <video loop id={`camera-${id}`} autoPlay muted style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} ref={payloadCameraRef}>
+                        {/* <source src={stream} type="video/mp4" />
+                        <track src="captions.vtt" kind="captions" label="English Captions" /> */}
                     </video>
                     {isHovered && (
                         <div style={{ position: 'absolute', bottom: 5, right: 5, backgroundColor: 'rgba(0, 0, 0, 0.5)', color: '#ffffff', padding: '2px 4px', borderRadius: '4px', fontSize: '12px' }}>
@@ -419,6 +428,10 @@ function Camera({ id, onClick, gridArea,stream}) {
                         cursor: 'pointer',
                         backgroundColor: '#1d2938',
                         position: 'relative',
+                        margin:'0',
+                        padding:'0',
+                        width:'100%',
+                        height: '100%'
                     }}
                     onClick={() => onClick(id)}
                     onMouseEnter={handleMouseEnter}
@@ -426,10 +439,23 @@ function Camera({ id, onClick, gridArea,stream}) {
                     tabIndex={0}
                     role="button"
                 >
-                    <video loop id={`camera-${id}`} autoPlay muted style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }}>
-                        <source src={stream} type="video/mp4" />
-                        <track src="captions.vtt" kind="captions" label="English Captions" />
+                {/* <img
+                    src={stream}
+                    style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    borderRadius: '5px',
+                    display: 'block', 
+                    margin: 0,
+                    padding: 0,
+                    border: 'none', 
+                    }}
+                /> */}
+                <video loop id={`camera-${id}`} autoPlay muted style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '5px' }} >
+                
                     </video>
+
                     {isHovered && (
                         <div style={{ position: 'absolute', bottom: 5, right: 5, backgroundColor: 'rgba(0, 0, 0, 0.5)', color: '#ffffff', padding: '2px 4px', borderRadius: '4px', fontSize: '12px' }}>
                             <div>{id}</div>
